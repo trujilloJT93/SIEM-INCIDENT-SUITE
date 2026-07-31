@@ -1,0 +1,9 @@
+services:
+  siem-suite:
+    build: .
+    container_name: siem_incident_suite
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    restart: unless-stopped

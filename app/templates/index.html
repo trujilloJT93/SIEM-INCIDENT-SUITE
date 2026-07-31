@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEM & Incident Suite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --bg-card: #111827;
+            --border-color: #374151;
+            --text-main: #ffffff;
+            --text-muted: #d1d5db;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .card-custom {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-label {
+            color: var(--text-main) !important;
+            font-weight: 600;
+        }
+
+        .form-control-custom {
+            background-color: #030712;
+            color: #60a5fa;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control-custom:focus {
+            background-color: #030712;
+            color: #93c5fd;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            border: none;
+            font-weight: 600;
+            padding: 0.6rem 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .badge-critical { background-color: #dc2626; color: #fff; }
+        .badge-medium { background-color: #d97706; color: #fff; }
+        .badge-low { background-color: #16a34a; color: #fff; }
+
+        .list-group-item-custom {
+            background-color: #030712;
+            border: 1px solid #374151;
+            color: var(--text-muted);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-dark-custom {
+            background-color: #030712;
+            color: var(--text-muted);
+            border-color: var(--border-color);
+        }
+
+        .header-title { color: #60a5fa; font-weight: 700; }
+        .header-subtitle { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container py-5" style="max-width: 950px;">
+        <header class="pb-4 mb-4 border-bottom border-secondary">
+            <h1 class="header-title fs-2">🛡️ SIEM & Incident Suite</h1>
+            <p class="header-subtitle mb-0">Plataforma avanzada de análisis y enriquecimiento de eventos de seguridad</p>
+        </header>
+
+        <main>
+            <!-- Formulario de Análisis -->
+            <section class="card card-custom mb-4 p-4 p-md-5">
+                <form action="/analyze" method="post">
+                    <div class="mb-3">
+                        <label for="raw_log" class="form-label mb-2">Introduce el Log para analizar:</label>
+                        <textarea 
+                            class="form-control form-control-custom font-monospace" 
+                            id="raw_log" 
+                            name="raw_log" 
+                            rows="5" 
+                            placeholder="Ej: Failed password for root from 192.168.1.50 port 22..."
+                            required>{{ raw_log }}</textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Analizar y Registrar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Resultado del Análisis Actual -->
+            {% if result %}
+            <section class="card card-custom p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-secondary">
+                    <h4 class="mb-0 text-white font-monospace fs-5">⚡ Resultado del Análisis</h4>
+                    <div>
+                        <span class="fw-bold text-muted me-2">Severidad:</span>
+                        {% if result.severity == 'CRITICAL' %}
+                            <span class="badge badge-critical px-3 py-2 fs-6">CRITICAL</span>
+                        {% elif result.severity == 'MEDIUM' %}
+                            <span class="badge badge-medium px-3 py-2 fs-6">MEDIUM</span>
+                        {% else %}
+                            <span class="badge badge-low px-3 py-2 fs-6">LOW</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-info fw-bold mb-2">🌐 Direcciones IP Detectadas:</h6>
+                    {% if result.ips %}
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% for ip in result.ips %}
+                                <span class="badge bg-dark border border-secondary text-light font-monospace px-3 py-2">{{ ip }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted fst-italic mb-0">No se detectaron direcciones IPv4 externas.</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="text-warning fw-bold mb-2">⚠️ Amenazas / Tácticas MITRE ATT&CK:</h6>
+                    <ul class="list-group">
+                        {% for threat in result.threats %}
+                            <li class="list-group-item list-group-item-custom font-monospace">
+                                <strong>Táctica:</strong> {{ threat.tactic }}<br>
+                                <strong>Técnica:</strong> {{ threat.technique }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div>
+                    <h6 class="text-success fw-bold mb-2">💡 Recomendaciones de Mitigación:</h6>
+                    <ul class="list-group">
+                        {% for rec in result.recommendations %}
+                            <li class="list-group-item list-group-item-custom">
+                                {{ rec }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Historial de Incidentes Guardados en DB -->
+            {% if history %}
+            <section class="card card-custom p-4">
+                <h4 class="mb-3 text-white font-monospace fs-5 border-bottom border-secondary pb-3">🗂️ Historial Reciente de Incidentes (Base de Datos)</h4>
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped table-hover table-sm align-middle font-monospace" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha / Hora</th>
+                                <th>Severidad</th>
+                                <th>IP(s)</th>
+                                <th>Técnica MITRE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in history %}
+                            <tr>
+                                <td>#{{ row.id }}</td>
+                                <td>{{ row.timestamp }}</td>
+                                <td>
+                                    {% if row.severity == 'CRITICAL' %}
+                                        <span class="badge badge-critical">CRITICAL</span>
+                                    {% elif row.severity == 'MEDIUM' %}
+                                        <span class="badge badge-medium">MEDIUM</span>
+                                    {% else %}
+                                        <span class="badge badge-low">LOW</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ row.ips if row.ips else 'N/A' }}</td>
+                                <td>{{ row.technique }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
